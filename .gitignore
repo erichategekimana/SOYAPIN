@@ -1,4 +1,21 @@
+# IDE files
+.idea/
+*.swp
+*.swo
 *.vscode
+
+# Python files
+venv/
+
+__pycache__/
 *.pyc
+
+# Server IP address
 *.svip
+
+# Environment variables
 *.env
+
+# OS files
+.DS_Store
+Thumbs.db
