@@ -47,3 +47,7 @@ Team_Setup_and_Project_Planning$ tree
     └── styles.css
 
 
+<<<<<<< HEAD
+=======
+<img width="331" height="818" alt="image" src="https://github.com/user-attachments/assets/d9eca3aa-a1eb-487d-913c-ade9af1c9870" />
+>>>>>>> c42652d69897fd9995ac0b3e9842f6504860e319
