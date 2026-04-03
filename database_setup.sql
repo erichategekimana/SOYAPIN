@@ -1,9 +1,12 @@
-DROP DATABASE IF NOT EXISTS soyapin_db;
-CREATE DATABASE IF NOT EXISTS soyapin_db;
+DROP DATABASE IF EXISTS soyapin_db;
+CREATE DATABASE soyapin_db;
+\c soyapin_db;
 
 
 -- Enable pgvector extension for AI/Chatbot capabilities
 CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION if not exists postgis;
+
 
 -- 1. IDENTITY & ACCESS
 CREATE TABLE roles (
@@ -160,3 +163,16 @@ CREATE INDEX idx_products_category ON products(category_id);
 CREATE INDEX idx_inventory_product ON inventory(product_id);
 CREATE INDEX idx_orders_user ON orders(user_id);
 CREATE INDEX idx_chat_vector ON chat_history USING hnsw (embedding_vector vector_cosine_ops);
+
+
+
+grant select on spatial_ref_sys to public;
+
+
+-- Use PostGIS Geography type for meter-based accuracy
+ALTER TABLE agents 
+ADD COLUMN current_location GEOGRAPHY(Point, 4326),
+ADD COLUMN last_location_update TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+
+-- Specialized spatial index
+CREATE INDEX idx_agents_location_geog ON agents USING GIST(current_location);
