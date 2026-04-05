@@ -37,8 +37,8 @@ LOCAL_APPS = [
     'apps.catalog',
     'apps.commerce',
     'apps.logistics',
-    'apps.health',
-    'apps.ai_engine',
+    # 'apps.health',
+    # 'apps.ai_engine',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -79,8 +79,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': os.getenv('DB_NAME', 'soyapin_db'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
+        'USER': os.getenv('DB_USER', 'seric'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'seric123'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
