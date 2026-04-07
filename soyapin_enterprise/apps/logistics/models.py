@@ -174,26 +174,32 @@ class Delivery(TimestampMixin, models.Model):
         return new_status in valid_transitions.get(self.status, [])
     
     def transition_status(self, new_status):
-        """Change status with validation and side effects"""
         from django.utils import timezone
-        
+        from django.apps import apps
+
         if not self.can_transition_to(new_status):
             raise ValueError(f"Cannot transition from {self.status} to {new_status}")
-        
+
         old_status = self.status
         self.status = new_status
-        
-        # Set timestamps
+
         if new_status == self.Status.PICKED_UP and not self.pickup_time:
             self.pickup_time = timezone.now()
         elif new_status == self.Status.DELIVERED and not self.actual_delivery_time:
             self.actual_delivery_time = timezone.now()
-            # Update agent stats
             if self.agent:
                 self.agent.total_deliveries += 1
                 self.agent.mark_available()
                 self.agent.save()
-        
+                # Auto-create pending payout
+                AgentPayout = apps.get_model('logistics', 'AgentPayout')
+                AgentPayout.objects.create(
+                    agent=self.agent,
+                    amount=self.delivery_fee,   # full fee goes to agent (adjust as needed)
+                    description=f"Delivery #{self.id} for Order #{self.order.id}",
+                    status=AgentPayout.Status.PENDING
+                )
+
         self.save()
         return True
 

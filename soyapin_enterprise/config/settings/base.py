@@ -37,7 +37,7 @@ LOCAL_APPS = [
     'apps.catalog',
     'apps.commerce',
     'apps.logistics',
-    # 'apps.health',
+    'apps.health',
     # 'apps.ai_engine',
 ]
 
@@ -130,3 +130,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings (for frontend connection)
 CORS_ALLOW_ALL_ORIGINS = True  # Change this in production!
+
+
+
+
+# Logistics / Delivery Fees
+DELIVERY_FEE_MODE = 'fixed'          # 'fixed' or 'distance'
+DELIVERY_FEE_FIXED_AMOUNT = 1500     # Fixed fee in RWF
+DELIVERY_FEE_PER_KM = 500            # Only used if mode = 'distance'
+DELIVERY_FEE_MINIMUM = 500           # Minimum fee for distance mode
+
+# Optional: warehouse coordinates for distance calculation (longitude, latitude)
+WAREHOUSE_LOCATION = None            # e.g., Point(30.0619, -1.9441)
+
+

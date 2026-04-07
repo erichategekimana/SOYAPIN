@@ -139,6 +139,110 @@ class AgentViewSet(viewsets.ReadOnlyModelViewSet):
     
 
 
+    @action(detail=True, methods=['post'], url_path='set-status')
+    def set_status(self, request, pk=None):
+        """
+        POST /agents/{id}/set-status/
+        Body: {"status": "available" | "busy" | "offline"}
+        """
+        agent = self.get_object()
+        if request.user != agent.user and not request.user.is_staff:
+            return Response(
+                {"error": "You can only update your own status"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        new_status = request.data.get('status')
+        if new_status not in [DeliveryAgent.Status.AVAILABLE, DeliveryAgent.Status.BUSY, DeliveryAgent.Status.OFFLINE]:
+            return Response(
+                {"error": f"Invalid status. Choose from {DeliveryAgent.Status.values}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        agent.status = new_status
+        agent.save()
+        return Response({
+            "status": agent.status,
+            "message": f"Status updated to {agent.get_status_display()}"
+        })
+    
+
+    @action(detail=True, methods=['get'], url_path='ratings')
+    def ratings(self, request, pk=None):
+        """
+        GET /agents/{id}/ratings/
+        Returns list of ratings given to this agent (from completed deliveries).
+        """
+        agent = self.get_object()
+        # Allow agent to see own ratings, admin sees all, others forbidden
+        if request.user != agent.user and not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        deliveries = Delivery.objects.filter(
+            agent=agent,
+            customer_rating__isnull=False
+        ).select_related('order').order_by('-created_at')
+        
+        data = [
+            {
+                "delivery_id": d.id,
+                "order_id": d.order.id,
+                "rating": d.customer_rating,
+                "comment": d.customer_comment,
+                "created_at": d.created_at,
+            }
+            for d in deliveries
+        ]
+        return Response({
+            "agent": agent.full_name,
+            "average_rating": agent.rating_avg,
+            "total_ratings": deliveries.count(),
+            "ratings": data
+        })
+    
+
+    @action(detail=True, methods=['get'], url_path='payouts')
+    def payouts(self, request, pk=None):
+        """
+        GET /agents/{id}/payouts/
+        Returns list of payouts for the agent.
+        """
+        agent = self.get_object()
+        if request.user != agent.user and not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        payouts = agent.payouts.all().order_by('-created_at')
+        data = [
+            {
+                "id": p.id,
+                "amount": p.amount,
+                "status": p.status,
+                "description": p.description,
+                "created_at": p.created_at,
+                "processed_at": p.processed_at,
+                "transaction_reference": p.transaction_reference,
+            }
+            for p in payouts
+        ]
+        return Response({
+            "agent": agent.full_name,
+            "total_payouts": payouts.count(),
+            "pending_amount": sum(p.amount for p in payouts if p.status == 'pending'),
+            "payouts": data
+        })
+    
+
+
+
+
+
+
 
 
 class DeliveryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -395,33 +499,7 @@ class DeliveryViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 
-    @action(detail=True, methods=['post'], url_path='set-status')
-    def set_status(self, request, pk=None):
-        """
-        POST /agents/{id}/set-status/
-        Body: {"status": "available" | "busy" | "offline"}
-        """
-        agent = self.get_object()
-        if request.user != agent.user and not request.user.is_staff:
-            return Response(
-                {"error": "You can only update your own status"},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        new_status = request.data.get('status')
-        if new_status not in [DeliveryAgent.Status.AVAILABLE, DeliveryAgent.Status.BUSY, DeliveryAgent.Status.OFFLINE]:
-            return Response(
-                {"error": f"Invalid status. Choose from {DeliveryAgent.Status.values}"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        agent.status = new_status
-        agent.save()
-        return Response({
-            "status": agent.status,
-            "message": f"Status updated to {agent.get_status_display()}"
-        })
-
+    
 
 
 

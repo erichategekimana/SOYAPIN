@@ -3,6 +3,15 @@ from django.utils.html import format_html
 from .models import DeliveryAgent, Delivery, AgentPayout
 
 
+
+
+@admin.action(description='Reset total deliveries to 0')
+def reset_deliveries(modeladmin, request, queryset):
+    queryset.update(total_deliveries=0)
+    modeladmin.message_user(request, f"Reset deliveries for {queryset.count()} agents")
+
+
+
 @admin.register(DeliveryAgent)
 class DeliveryAgentAdmin(admin.ModelAdmin):
     list_display = [
