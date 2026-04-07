@@ -33,7 +33,7 @@ class CartViewSet(viewsets.ViewSet):
     def list(self, request):
         """GET /cart/ - view cart"""
         cart = self.get_cart()
-        serializer = CartSerializer(cart)
+        serializer = CartSerializer(cart, context={'request': request})
         return Response(serializer.data)
     
     @action(detail=False, methods=['post'])

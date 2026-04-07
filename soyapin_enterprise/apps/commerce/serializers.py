@@ -23,10 +23,26 @@ class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)
     total = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     item_count = serializers.IntegerField(read_only=True)
+    total_protein = serializers.SerializerMethodField()
+    total_calories = serializers.SerializerMethodField()
+    protein_percentage = serializers.SerializerMethodField()
     
     class Meta:
         model = Cart
-        fields = ['id', 'items', 'total', 'item_count', 'created_at', 'updated_at']
+        fields = [
+            'id', 'items', 'total', 'item_count',
+            'created_at', 'updated_at',
+            'total_protein', 'total_calories', 'protein_percentage'
+            ]
+    def get_total_protein(self, obj):
+        return obj.get_total_protein()
+    def get_total_calories(self, obj):
+        return obj.get_total_calories()
+    def get_protein_percentage(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.get_protein_percentage(request.user)
+        return None
 
 
 class AddToCartSerializer(serializers.Serializer):

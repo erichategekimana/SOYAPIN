@@ -51,6 +51,33 @@ class Cart(TimestampMixin, models.Model):
             self.clear()
             
             return order
+        
+
+    def get_total_protein(self):
+        """Returns total protein in grams for all cart items."""
+        total = 0
+        for item in self.items.all():
+            protein = item.product.nutritional_data.get('protein', 0)
+            total += item.quantity * protein
+        return total
+
+    def get_total_calories(self):
+        """Returns total calories for all cart items."""
+        total = 0
+        for item in self.items.all():
+            calories = item.product.nutritional_data.get('calories', 0)
+            total += item.quantity * calories
+        return total
+
+    def get_protein_percentage(self, user):
+        """Returns percentage of user's daily protein goal, or None if no health profile."""
+        if not hasattr(user, 'health_profile'):
+            return None
+        goal = user.health_profile.daily_protein_goal_g
+        if goal <= 0:
+            return None
+        total_protein = self.get_total_protein()
+        return round((total_protein / goal) * 100, 1)
 
 
     @property
