@@ -71,15 +71,25 @@ class OrderListSerializer(serializers.ModelSerializer):
 class OrderDetailSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    
+    delivery_option_display = serializers.CharField(source='get_delivery_option_display', read_only=True)
+
     class Meta:
         model = Order
-        fields = ['id', 'status', 'status_display', 'total_amount', 'items', 'notes', 'created_at']
+        fields = [
+            'id', 'status', 'status_display', 'total_amount', 'items',
+            'notes', 'created_at', 'delivery_option', 'delivery_option_display',
+            'scheduled_datetime'
+        ]
 
-
+        
 class CreateOrderSerializer(serializers.Serializer):
     shipping_address_id = serializers.IntegerField(required=True)
     notes = serializers.CharField(required=False, allow_blank=True)
+    delivery_option = serializers.ChoiceField(
+        choices=Order.DeliveryOption.choices,
+        default=Order.DeliveryOption.EXPRESS
+    )
+    scheduled_datetime = serializers.DateTimeField(required=False, allow_null=True)
 
 
 class PaymentSerializer(serializers.ModelSerializer):

@@ -4,6 +4,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.db import transaction
+from .services import MockPaymentGateway
+from django.utils import timezone
+import uuid
 
 from .models import Cart, CartItem, Order, Payment
 from .serializers import (
@@ -159,26 +162,38 @@ class OrderViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        
+        # Validate scheduled datetime
+        delivery_option = serializer.validated_data.get('delivery_option')
+        scheduled_datetime = serializer.validated_data.get('scheduled_datetime')
+        if delivery_option == Order.DeliveryOption.SCHEDULED and not scheduled_datetime:
+            return Response(
+                {"error": "scheduled_datetime is required for scheduled delivery"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if delivery_option == Order.DeliveryOption.EXPRESS:
+            scheduled_datetime = None  # ensure null for express
+
         try:
             with transaction.atomic():
-                # Convert cart to order (reserves stock)
                 order = cart.to_order(shipping_address)
                 order.notes = serializer.validated_data.get('notes', '')
+                order.delivery_option = delivery_option
+                order.scheduled_datetime = scheduled_datetime
                 order.save()
-                
+
                 return Response({
                     'status': 'order created',
                     'order_id': order.id,
                     'total': order.total_amount,
+                    'delivery_option': order.delivery_option,
+                    'scheduled_datetime': order.scheduled_datetime,
                     'payment_url': f'/api/v1/commerce/orders/{order.id}/pay/'
                 }, status=status.HTTP_201_CREATED)
-                
+
         except Exception as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-    
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         """POST /orders/{id}/cancel/ - cancel pending order"""
@@ -285,5 +300,64 @@ class OrderViewSet(viewsets.ViewSet):
         except Exception as e:
             return Response(
                 {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+    @action(detail=True, methods=['post'], url_path='mock-pay')
+    def mock_pay(self, request, pk=None):
+        """
+        POST /orders/{id}/mock-pay/
+        Simulate payment for testing.
+        Body: {"provider": "mtn", "phone_number": "+2507XXXXXXXX"}
+        """
+        order = get_object_or_404(self.get_queryset(), pk=pk)   # ← fix here
+
+        if order.status != Order.Status.PENDING:
+            return Response(
+                {"error": "Order already paid or cancelled"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        provider = request.data.get('provider')
+        phone_number = request.data.get('phone_number', '')
+
+        if provider not in [Payment.Provider.MTN, Payment.Provider.AIRTEL, Payment.Provider.EQUITY]:
+            return Response(
+                {"error": "Invalid provider. Choose mtn, airtel, or equity"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Process mock payment
+        success, txn_ref, message = MockPaymentGateway.process_payment(order, provider, phone_number)
+
+        if success:
+            payment = Payment.objects.create(
+                order=order,
+                provider=provider,
+                transaction_ref=txn_ref,
+                amount=order.total_amount,
+                status=Payment.Status.COMPLETED,
+                completed_at=timezone.now()   # ensure timezone is imported correctly
+            )
+            order.status = Order.Status.PAID
+            order.save()
+            return Response({
+                "status": "payment_success",
+                "transaction_ref": txn_ref,
+                "amount": payment.amount,
+                "provider": payment.get_provider_display(),
+                "message": message
+            })
+        else:
+            Payment.objects.create(
+                order=order,
+                provider=provider,
+                transaction_ref=f"FAILED-{uuid.uuid4().hex[:8]}",
+                amount=order.total_amount,
+                status=Payment.Status.FAILED,
+                failure_reason=message
+            )
+            return Response(
+                {"error": message, "status": "payment_failed"},
                 status=status.HTTP_400_BAD_REQUEST
             )

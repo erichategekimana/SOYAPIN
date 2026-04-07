@@ -143,12 +143,22 @@ class Order(TimestampMixin, models.Model):
         SHIPPED = 'shipped', 'Shipped'
         DELIVERED = 'delivered', 'Delivered'
         CANCELLED = 'cancelled', 'Cancelled'
+
+    class DeliveryOption(models.TextChoices):
+        EXPRESS = 'express', 'Express (1-2 hrs)'
+        SCHEDULED = 'scheduled', 'Scheduled'
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2)
     shipping_address = models.ForeignKey(UserAddress, on_delete=models.SET_NULL, null=True, blank=True)
     notes = models.TextField(blank=True)
+    delivery_option = models.CharField(
+        max_length=20,
+        choices=DeliveryOption.choices,
+        default=DeliveryOption.EXPRESS
+    )
+    scheduled_datetime = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         db_table = 'orders'
