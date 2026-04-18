@@ -40,4 +40,4 @@ android*
 
 # API Keys
 
-settings/local.py
+soyapin_enterprise/config/settings/local.py
