@@ -37,3 +37,7 @@ test_queries/*
 # Mobile phone app
 flutter_application_1
 android*
+
+# API Keys
+
+local.py
