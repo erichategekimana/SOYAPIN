@@ -1,6 +1,5 @@
 import os
 
-
 # MTN Mobile Money API (Sandbox)
 MTN_MOMO_ENVIRONMENT = 'sandbox'
 MTN_MOMO_SUBSCRIPTION_KEY = os.getenv('MTN_MOMO_SUBSCRIPTION_KEY')

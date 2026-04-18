@@ -40,4 +40,4 @@ android*
 
 # API Keys
 
-*local.py
+settings/local.py
