@@ -36,11 +36,6 @@ class DeliveryAgent(TimestampMixin, models.Model):
         help_text='Delivery area/zone (e.g., Kigali-North, Kigali-Central)'
     )
 
-    profile_picture = models.URLField(
-        upload_to='agent_profiles/',
-        null=True,
-        help_text='Profile picture of the delivery agent'
-    )
     
     vehicle_type = models.CharField(
         max_length=20,
@@ -59,6 +54,12 @@ class DeliveryAgent(TimestampMixin, models.Model):
         decimal_places=2,
         default=0.00,
         validators=[MinValueValidator(0.00), MaxValueValidator(5.00)]
+    )
+
+    profile_picture = models.URLField(
+        max_length=500,
+        blank=True,
+        help_text='Profile picture URL of the delivery agent'
     )
     
     total_deliveries = models.PositiveIntegerField(default=0)

@@ -6,6 +6,7 @@ from .models import DeliveryAgent, Delivery
 class DeliveryAgentSerializer(serializers.ModelSerializer):
     full_name = serializers.ReadOnlyField()
     current_location = serializers.SerializerMethodField()
+    profile_picture = serializers.URLField(required=False, allow_blank=True)
 
     class Meta:
         model = DeliveryAgent

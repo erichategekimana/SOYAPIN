@@ -4,9 +4,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.db import transaction
-from .services import MockPaymentGateway
 from django.utils import timezone
 import uuid
+from .services import PaymentService
 
 from .models import Cart, CartItem, Order, Payment
 from .serializers import (
@@ -302,42 +302,51 @@ class OrderViewSet(viewsets.ViewSet):
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
         
-    @action(detail=True, methods=['post'], url_path='mock-pay')
-    def mock_pay(self, request, pk=None):
-        """
-        POST /orders/{id}/mock-pay/
-        Simulate payment for testing.
-        Body: {"provider": "mtn", "phone_number": "+2507XXXXXXXX"}
-        """
-        order = get_object_or_404(self.get_queryset(), pk=pk)   # ← fix here
+    
+
+   
+
+    @action(detail=True, methods=['post'], url_path='mtn-pay')
+    def mtn_pay(self, request, pk=None):
+        order = get_object_or_404(self.get_queryset(), pk=pk)
+
+        # Check if order already has a completed payment
+        if hasattr(order, 'payment') and order.payment.status == Payment.Status.COMPLETED:
+            return Response(
+                {"error": "Order already paid"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if order.status != Order.Status.PENDING:
             return Response(
-                {"error": "Order already paid or cancelled"},
+                {"error": "Order cannot be paid (status is not PENDING)"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        provider = request.data.get('provider')
-        phone_number = request.data.get('phone_number', '')
-
-        if provider not in [Payment.Provider.MTN, Payment.Provider.AIRTEL, Payment.Provider.EQUITY]:
+        phone_number = request.data.get('phone_number')
+        if not phone_number:
             return Response(
-                {"error": "Invalid provider. Choose mtn, airtel, or equity"},
+                {"error": "phone_number is required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Process mock payment
-        success, txn_ref, message = MockPaymentGateway.process_payment(order, provider, phone_number)
+        # Delete any existing failed/pending payment to avoid conflict
+        if hasattr(order, 'payment'):
+            order.payment.delete()
+
+        from .services import PaymentService
+        success, txn_ref, message = PaymentService.initiate_mtn_payment(order, phone_number)
 
         if success:
             payment = Payment.objects.create(
                 order=order,
-                provider=provider,
+                provider=Payment.Provider.MTN,
                 transaction_ref=txn_ref,
                 amount=order.total_amount,
                 status=Payment.Status.COMPLETED,
-                completed_at=timezone.now()   # ensure timezone is imported correctly
+                completed_at=timezone.now()
             )
             order.status = Order.Status.PAID
             order.save()
@@ -345,13 +354,13 @@ class OrderViewSet(viewsets.ViewSet):
                 "status": "payment_success",
                 "transaction_ref": txn_ref,
                 "amount": payment.amount,
-                "provider": payment.get_provider_display(),
+                "provider": "MTN Mobile Money",
                 "message": message
             })
         else:
             Payment.objects.create(
                 order=order,
-                provider=provider,
+                provider=Payment.Provider.MTN,
                 transaction_ref=f"FAILED-{uuid.uuid4().hex[:8]}",
                 amount=order.total_amount,
                 status=Payment.Status.FAILED,

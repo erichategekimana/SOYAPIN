@@ -438,6 +438,7 @@ class DeliveryViewSet(viewsets.ReadOnlyModelViewSet):
             "pickup_time": delivery.pickup_time,
             "actual_delivery_time": delivery.actual_delivery_time,
             "delivery_fee": delivery.delivery_fee,
+            "profile_picture": delivery.agent.profile_picture if delivery.agent else None,
         }
         
         if delivery.agent:
