@@ -13,7 +13,8 @@ class DeliveryAgentSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'full_name', 'assigned_zone', 'vehicle_type',
             'status', 'rating_avg', 'total_deliveries',
-            'current_location', 'last_location_update', 'is_active'
+            'current_location', 'last_location_update', 'is_active',
+            'profile_picture'
         ]
         read_only_fields = fields
 

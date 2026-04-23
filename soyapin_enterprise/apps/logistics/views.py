@@ -438,7 +438,6 @@ class DeliveryViewSet(viewsets.ReadOnlyModelViewSet):
             "pickup_time": delivery.pickup_time,
             "actual_delivery_time": delivery.actual_delivery_time,
             "delivery_fee": delivery.delivery_fee,
-            "profile_picture": delivery.agent.profile_picture if delivery.agent else None,
         }
         
         if delivery.agent:
@@ -446,6 +445,9 @@ class DeliveryViewSet(viewsets.ReadOnlyModelViewSet):
                 "id": delivery.agent.id,
                 "full_name": delivery.agent.full_name,
                 "vehicle_type": delivery.agent.vehicle_type,
+                "assigned_zone": delivery.agent.assigned_zone,
+                "profile_picture": delivery.agent.profile_picture,
+                "status": delivery.agent.status,
                 "current_location": {
                     "type": "Point",
                     "coordinates": [delivery.agent.current_location.x, delivery.agent.current_location.y]

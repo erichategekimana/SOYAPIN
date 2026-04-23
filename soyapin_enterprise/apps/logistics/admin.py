@@ -21,8 +21,16 @@ class DeliveryAgentAdmin(admin.ModelAdmin):
         'status_badge',
         'rating_avg',
         'total_deliveries',
-        'last_location'
+        'last_location',
+        'profile_picture_preview'
     ]
+
+    def profile_picture_preview(self, obj):
+        if obj.profile_picture:
+            return format_html('<img src="{}" width="50" height="50" style="border-radius: 50%;" />', obj.profile_picture)
+        return "No Image"
+    profile_picture_preview.short_description = 'Profile Picture'
+
     
     list_filter = ['status', 'vehicle_type', 'assigned_zone', 'is_active']
     search_fields = ['user__email', 'user__first_name', 'user__last_name', 'assigned_zone']
