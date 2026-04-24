@@ -28,7 +28,8 @@ THIRD_PARTY_APPS = [
     'rest_framework_gis',
     'corsheaders',
     'django_filters',
-    'pgvector.django',  # For AI vector search
+    'pgvector.django',  # For AI vector searchs
+    'drf_spectacular',  # For API documentation
 ]
 
 LOCAL_APPS = [
@@ -111,6 +112,14 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'soyapin API',
+    'VERSION': '1.0.0',
+    'DESCRIPTION': 'API documentation for the soyapin enterprise application',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 # Internationalization
