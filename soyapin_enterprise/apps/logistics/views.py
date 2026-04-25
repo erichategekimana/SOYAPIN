@@ -255,6 +255,9 @@ class DeliveryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = DeliverySerializer
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Delivery.objects.none()  # Return empty queryset for schema generation
+        
         user = self.request.user
         if user.is_staff:
             return Delivery.objects.all()

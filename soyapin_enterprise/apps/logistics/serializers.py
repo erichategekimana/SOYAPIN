@@ -1,10 +1,11 @@
 from rest_framework import serializers
 from django.contrib.gis.geos import Point
 from .models import DeliveryAgent, Delivery
+from drf_spectacular.utils import extend_schema_field
 
 
 class DeliveryAgentSerializer(serializers.ModelSerializer):
-    full_name = serializers.ReadOnlyField()
+    full_name = serializers.CharField(read_only=True)
     current_location = serializers.SerializerMethodField()
     profile_picture = serializers.URLField(required=False, allow_blank=True)
 
@@ -17,7 +18,7 @@ class DeliveryAgentSerializer(serializers.ModelSerializer):
             'profile_picture'
         ]
         read_only_fields = fields
-
+    @extend_schema_field(serializers.JSONField())
     def get_current_location(self, obj):
         """Return GeoJSON representation of the PointField"""
         if obj.current_location:

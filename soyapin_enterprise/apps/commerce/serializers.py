@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Cart, CartItem, Order, OrderItem, Payment
 from apps.catalog.models import Product
+from drf_spectacular.utils import extend_schema_field
 from apps.catalog.serializers import ProductListSerializer
 
 
@@ -33,11 +34,14 @@ class CartSerializer(serializers.ModelSerializer):
             'id', 'items', 'total', 'item_count',
             'created_at', 'updated_at',
             'total_protein', 'total_calories', 'protein_percentage'
-            ]
+        ]
+    @extend_schema_field(serializers.DecimalField(max_digits=12, decimal_places=2))
     def get_total_protein(self, obj):
         return obj.get_total_protein()
+    @extend_schema_field(serializers.DecimalField(max_digits=12, decimal_places=2))
     def get_total_calories(self, obj):
         return obj.get_total_calories()
+    @extend_schema_field(serializers.FloatField())
     def get_protein_percentage(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:

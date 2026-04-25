@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Category, Vendor, Product, Inventory
+from drf_spectacular.utils import extend_schema_field
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -24,7 +25,7 @@ class InventorySerializer(serializers.ModelSerializer):
             'needs_restock',
             'status'
         ]
-    
+    @extend_schema_field(serializers.ChoiceField(choices=['in_stock', 'low_stock', 'out_of_stock']))
     def get_status(self, obj):
         if obj.quantity_available == 0:
             return 'out_of_stock'
@@ -47,7 +48,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'stock_status', 'protein_content',
             'is_published', 'created_at'
         ]
-    
+    @extend_schema_field(serializers.ChoiceField(choices=['available', 'limited', 'unavailable']))
     def get_stock_status(self, obj):
         if not obj.is_in_stock:
             return 'unavailable'
@@ -61,6 +62,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     inventory = InventorySerializer(read_only=True)
     nutritional_data = serializers.JSONField()
+    current_price = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
@@ -72,6 +74,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
 
+    @extend_schema_field(serializers.DecimalField(max_digits=12, decimal_places=2))
+    def get_current_price(self, obj):
+        return obj.base_price
 
 class ProductCreateUpdateSerializer(serializers.ModelSerializer):
     category_id = serializers.PrimaryKeyRelatedField(

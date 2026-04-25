@@ -18,7 +18,7 @@ from apps.catalog.models import Product
 from apps.identity.models import UserAddress
 
 
-class CartViewSet(viewsets.ViewSet):
+class CartViewSet(viewsets.GenericViewSet):
     """
     Shopping cart operations
     GET /commerce/cart/ - view my cart
@@ -26,6 +26,8 @@ class CartViewSet(viewsets.ViewSet):
     POST /commerce/cart/remove/ - remove item
     DELETE /commerce/cart/clear/ - empty cart
     """
+    queryset = Cart.objects.none()  # We override get_cart, so no default queryset
+    serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]
     
     def get_cart(self):
@@ -95,7 +97,7 @@ class CartViewSet(viewsets.ViewSet):
         return Response({'status': 'cart cleared'})
 
 
-class OrderViewSet(viewsets.ViewSet):
+class OrderViewSet(viewsets.GenericViewSet):
     """
     Order management
     GET /commerce/orders/ - my orders
@@ -104,8 +106,12 @@ class OrderViewSet(viewsets.ViewSet):
     POST /commerce/orders/{id}/cancel/ - cancel order
     """
     permission_classes = [IsAuthenticated]
-    
+    serializer_class = OrderDetailSerializer
+    queryset = Order.objects.none()  # We override get_queryset, so no default queryset
+
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Order.objects.none()  # Return empty queryset for schema generation
         """Users see their own orders, admins see all"""
         user = self.request.user
         if getattr(user, 'role', None) == 'admin':

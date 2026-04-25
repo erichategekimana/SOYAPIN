@@ -31,10 +31,14 @@ class AddressViewSet(viewsets.ModelViewSet):
     Handles CRUD for shipping addresses.
     Filters queryset so users only see their own addresses.
     """
+    queryset = UserAddress.objects.all()
     serializer_class = UserAddressSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return UserAddress.objects.none()  # Return empty queryset for schema generation
+        
         # Only return addresses belonging to the logged-in user
         return UserAddress.objects.filter(user=self.request.user)
 
